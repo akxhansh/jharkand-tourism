@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jharkhand — Marketplace</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <script>
+      // ==========================================
+      // 1. SUPABASE CONFIGURATION
+      // ==========================================
+      const SUPABASE_URL = "https://twyklobclarqdpkmumkm.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eWtsb2JjbGFycWRwa211bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNTcxMTYsImV4cCI6MjA4MDgzMzExNn0.edD7uIYk0DE00KAFFMpTVApg3__ilwvLMVfmvv-oRh0"; // <--- PASTE YOUR KEY HERE
+      
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // ==========================================
+      // 2. HELPER: UPLOAD FILE
+      // ==========================================
+      async function uploadToSupabase(file) {
+          if (!file) return null;
+          const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+          const { data, error } = await supabaseClient.storage
+              .from('market_assets')
+              .upload(fileName, file);
+          
+          if (error) {
+              console.error('Upload Error:', error);
+              return null;
+          }
+          
+          const { data: urlData } = supabaseClient.storage.from('market_assets').getPublicUrl(fileName);
+          return urlData.publicUrl;
+      }
+
+      // ==========================================
+      // 3. FETCH PRODUCTS
+      // ==========================================
+      async function fetchMarketplaceProducts() {
+          const { data, error } = await supabaseClient
+              .from('marketplace_products')
+              .select('*');
+
+          if (!error && data) {
+              const categorized = {};
+              data.forEach(prod => {
+                  if (!categorized[prod.category]) categorized[prod.category] = [];
+                  categorized[prod.category].push({
+                      title: prod.title,
+                      desc: prod.description,
+                      price: `₹${prod.price}`,
+                      img: prod.imageUrl,
+                      upiQrCode: prod.upiQrUrl
+                  });
+              });
+              localStorage.setItem('categoryProducts', JSON.stringify(categorized));
+              window.dispatchEvent(new Event('storage'));
+          }
+      }
+
+      // Initial Fetch
+      fetchMarketplaceProducts();
+  </script>
+
+  <style>
+    :root{--accent:#ff6b6b;--muted:#6b7280;--bg:#ffffff;--maxw:1180px}
+    *{box-sizing:border-box}
+    body{font-family:'Poppins',system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:var(--bg);color:#111}
+    .page{max-width:1400px;margin:40px auto;padding:0 28px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:18px 0;position:relative;z-index:9998}
+    .logo img{height:44px}
+    nav ul{display:flex;gap:28px;list-style:none;padding:0;margin:0}
+    nav a{color:#2f3a56;text-decoration:none;font-weight:600}
+    .hero-card{margin-top:18px;background:#ddd;border-radius:36px;overflow:hidden;box-shadow:0 18px 40px rgba(18,25,40,0.08);max-width:var(--maxw);margin-left:auto;margin-right:auto;position:relative;min-height:420px}
+    .hero-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:contrast(0.98) saturate(1.02)}
+    .hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg, rgba(10,10,10,0.45) 0%, rgba(10,10,10,0.15) 45%, rgba(255,255,255,0) 100%)}
+    .hero-content{position:relative;z-index:3;padding:72px 64px;max-width:760px;color:#fff}
+    .hero-content h1{font-size:84px;line-height:0.95;margin:0 0 18px;font-weight:700;letter-spacing:-1px}
+    .hero-content p{margin:0 0 26px;color:rgba(255,255,255,0.95);opacity:0.95}
+    .cta{display:inline-block;padding:14px 26px;background:#fff;color:#333;border-radius:36px;text-decoration:none;font-weight:600;box-shadow:0 8px 18px rgba(16,24,40,0.08)}
+    @media (max-width:1000px){.hero-content{padding:48px}.hero-content h1{font-size:56px}}
+    @media (max-width:640px){header{padding:8px 0}nav ul{display:none}.hero-card{min-height:360px;border-radius:24px}.hero-content{padding:28px}.hero-content h1{font-size:36px}.page{padding:0 16px;margin:20px auto}}
+    .hero-meta{position:absolute;right:28px;bottom:28px;z-index:4;color:rgba(255,255,255,0.95);font-weight:600}
+    .hero-meta .pill{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:999px}
+
+    /* items section */
+    .items-section{max-width:1180px;margin:80px auto 40px;text-align:center}
+    .items-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:48px}
+    .items-grid .item{width:180px}
+    .items-grid .item img{width:160px;height:160px;border-radius:50%;object-fit:cover;transition:transform .28s ease,box-shadow .28s ease}
+    .items-grid .item img:hover{transform:scale(1.12);box-shadow:0 12px 28px rgba(0,0,0,0.18)}
+    .items-grid h3{margin-top:16px;font-size:22px;color:#444;font-weight:600}
+
+    /* cards grid */
+    #category-products{max-width:1180px;margin:24px auto 80px;padding:0 16px;display:none}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
+    .card{background:#fff;border-radius:14px;box-shadow:0 6px 18px rgba(20,24,40,0.06);overflow:hidden}
+    .card .media{height:220px;background-size:cover;background-position:center;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .card .body{padding:18px}
+    .card h3{margin:0 0 8px;font-size:18px;font-weight:700;color:#111}
+    .card p{margin:8px 0 14px;color:#666;font-size:14px;line-height:1.5}
+    .card .price{font-size:18px;font-weight:700}
+
+    /* cart drawer */
+    .cart-btn{position:relative;cursor:pointer}
+    .cart-badge{position:absolute;top:-8px;right:-8px;background:var(--accent);color:#fff;border-radius:999px;padding:4px 8px;font-weight:700;font-size:12px}
+    #cart-drawer{position:fixed;right:20px;top:80px;width:340px;max-height:70vh;background:#fff;border-radius:12px;box-shadow:0 18px 50px rgba(16,24,40,0.12);overflow:auto;display:none;z-index:999;padding:12px}
+    #cart-drawer h3{margin:8px 0 12px}
+    .cart-item{display:flex;gap:12px;align-items:center;padding:8px 6px;border-bottom:1px solid #f0f0f0}
+    .cart-item img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+    .cart-item .meta{flex:1}
+    .cart-item .meta strong{display:block}
+    .cart-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 6px}
+    .small-btn{background:#fff;border:1px solid #eee;padding:8px 10px;border-radius:8px;cursor:pointer}
+
+    @keyframes modalScale {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-content {
+      position: relative;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow: auto;
+      transform: scale(0.7);
+      animation: modalScale 0.3s ease forwards;
+    }
+
+    .modal-header {
+      padding: 24px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 0 24px 24px;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      border: 2px solid #eee;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .payment-option:hover {
+      border-color: #2f3a56;
+      transform: translateX(4px);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #2f3a56;
+      box-shadow: 0 0 0 3px rgba(47, 58, 86, 0.1);
+    }
+
+    .btn {
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn.primary {
+      background: #2f3a56;
+      color: white;
+    }
+
+    .btn.primary:hover {
+      background: #1d2a45;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(47, 58, 86, 0.2);
+    }
+
+    .btn.primary:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="logo"><img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='44'><text x='0' y='28' font-family='Poppins, Arial' font-size='24' fill='%232f3a56'>Jharkhand</text></svg>" alt="logo"></div>
+      <nav aria-label="Main navigation">
+        <ul>
+          <li><a href="javascript:void(0)" class="active" aria-label="Home page">home</a></li>
+          <li><a href="javascript:void(0)" id="nav-menu" aria-label="Menu">menu</a></li>
+          <li><a href="javascript:void(0)" id="nav-sell" aria-label="Sell your products">sell products</a></li>
+          <li><a href="vendor-registration.html" aria-label="Vendor registration">Vendor Registration</a></li>
+          <li><a href="javascript:void(0)" aria-label="Contact us">contact us</a></li>
+        </ul>
+      </nav>
+      <div class="nav-right" style="display:flex;gap:18px;align-items:center">
+        <div class="icon" title="search" id="icon-search" role="button" tabindex="0" aria-label="Search products">🔍</div>
+        <div id="cart-btn" class="icon cart-btn" title="cart" role="button" tabindex="0" aria-label="Shopping cart">🧺<span id="cart-count" class="cart-badge" style="display:none">0</span></div>
+        <div id="auth-area"></div>
+      </div>
+    </header>
+
+    <div id="sell-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10002;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all 0.3s ease;">
+      <div class="modal-content" style="position:relative;background:white;border-radius:14px;box-shadow:0 20px 40px rgba(0,0,0,0.15);width:100%;max-width:600px;max-height:80vh;overflow:hidden;transform:scale(0.7);animation:modalScale 0.3s ease forwards;">
+        <div class="modal-header" style="padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;color:#2f3a56;font-size:24px;">Sell Your Products</h2>
+          <button class="close-btn" id="close-sell-modal" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:0 24px 24px;max-height:70vh;overflow-y:auto;">
+          <form id="sell-product-form">
+            <div class="form-group"><label>Vendor ID *</label><input type="text" id="vendor-id" required></div>
+            <div class="form-group"><label>Product Name *</label><input type="text" id="product-name" required></div>
+            <div class="form-group"><label>Description *</label><input type="text" id="product-description" required></div>
+            <div class="form-group"><label>Category *</label>
+              <select id="product-category" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;">
+                <option value="">Select a category</option>
+                <option value="sohrai">Sohrai Art</option>
+                <option value="stone">Stone Carving</option>
+                <option value="lac">Lac Bangles</option>
+                <option value="khadi">Khadi Handloom</option>
+                <option value="bamboo">Bamboo Craft</option>
+                <option value="dhokra">Dhokra Craft</option>
+                <option value="jute">Jute Products</option>
+                <option value="munda">Munda Jewelry</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Price (₹) *</label><input type="number" id="product-price" required></div>
+            <div class="form-group"><label>Product Image *</label><input type="file" id="product-image" accept="image/*" required>
+              <div id="image-preview" style="display:none;margin-top:10px;"><img id="preview-img" style="max-width:100px;"></div>
+            </div>
+            <div class="form-group"><label>UPI QR Code (Optional)</label><input type="file" id="upi-qr-image" accept="image/*">
+              <div id="upi-qr-preview" style="display:none;margin-top:10px;"><img id="upi-qr-preview-img" style="max-width:100px;"></div>
+            </div>
+            <div style="text-align:right;margin-top:20px;">
+              <button type="button" id="cancel-sell" class="small-btn">Cancel</button>
+              <button type="submit" class="btn primary">Add Product</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <section class="hero-card" role="region" aria-label="Marketplace hero">
+      <div class="hero-bg" style="background-image:url('https://images.unsplash.com/photo-1596645853779-449a0d55ec6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80');"></div>
+      <div class="hero-overlay" aria-hidden="true"></div>
+      <div class="hero-content">
+        <h1>Explore Authentic<br>Tribal Products</h1>
+        <p>Choose from a diverse collection of original tribal handicrafts, bamboo artistry, and more.</p>
+        <a class="cta" href="#menu-section">View Items</a>
+      </div>
+    </section>
+
+    <section class="items-section" id="menu-section">
+      <h2 style="font-size:48px;font-weight:700;margin-bottom:16px;color:#222;">Explore our items</h2>
+      <div class="items-grid">
+        <div class="item" data-cat="sohrai" role="button" tabindex="0"><img src="https://static.wixstatic.com/media/9dd462_26ad129195cd4ef9951ea06b6f5af41e~mv2.jpg/v1/fill/w_480,h_718,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/9dd462_26ad129195cd4ef9951ea06b6f5af41e~mv2.jpg"><h3>Sohrai Art</h3></div>
+        <div class="item" data-cat="stone" role="button" tabindex="0"><img src="https://youngintach.org/public/frontend_assets/images/JHARKHAND-25july24-big5.jpg"><h3>Stone Carving</h3></div>
+        <div class="item" data-cat="lac" role="button" tabindex="0"><img src="https://gaatha.org/wp-content/uploads/usage_1-45.jpg"><h3>Lac Bangles</h3></div>
+        <div class="item" data-cat="khadi" role="button" tabindex="0"><img src="https://mysilklove.com/cdn/shop/files/MSL-d1_5f44a7a2-8773-4be3-a038-2f228f8dd7f6.jpg?v=1704882621&width=2048"><h3>Khadi Handloom</h3></div>
+        <div class="item" data-cat="bamboo" role="button" tabindex="0"><img src="https://www.shutterstock.com/image-photo/traditional-market-vietnam-goods-made-600nw-2539097741.jpg"><h3>Bamboo Craft</h3></div>
+        <div class="item" data-cat="dhokra" role="button" tabindex="0"><img src="https://www.shambhavicreations.co.in/cdn/shop/files/LRM_EXPORT_106553940619729_20190719_134929160_1_-min_d333e2aa-657d-4169-8674-bb4af7c05201_1080x.jpg?v=1675081508"><h3>Dhokra Craft</h3></div>
+        <div class="item" data-cat="jute" role="button" tabindex="0"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRL9sFTwcHnLpXnjhjnDs4qbD79pxubadesp5G0gG2bK-0hLT20fJHGYcQy0ILA3zKmJsE&usqp=CAU"><h3>Jute Products</h3></div>
+        <div class="item" data-cat="munda" role="button" tabindex="0"><img src="https://cultureandheritage.org/wp-content/uploads/2024/01/image-69.png"><h3>Munda Jewelry</h3></div>
+      </div>
+    </section>
+
+    <div id="category-products" aria-live="polite"></div>
+
+    <section id="seller-products" style="margin:80px auto; max-width:1180px; padding:0 16px; display:none;">
+      <h2 style="font-size:42px; font-weight:700; color:#111; margin-bottom:32px; text-align:center;">Products from Local Artisans</h2>
+      <div id="seller-products-container" class="cards"></div>
+    </section>
+
+    <div id="cart-drawer" style="display:none;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px;"><h3>Your cart</h3><button id="close-cart" style="background:none;border:none;font-size:24px;">&times;</button></div>
+      <div id="cart-list"></div>
+      <div class="cart-footer">
+        <div><strong>Total:</strong> <span id="cart-total">₹0.00</span></div>
+        <div><button id="clear-cart" class="small-btn">Clear</button> <button id="checkout" class="small-btn">Checkout</button></div>
+      </div>
+    </div>
+
+    <div id="payment-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
+      <div class="modal-content" style="background:white;padding:20px;border-radius:14px;width:90%;max-width:500px;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;">
+          <h2>Choose Payment Method</h2>
+          <button id="close-payment-modal" style="background:none;border:none;font-size:24px;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="cart-summary" style="margin-bottom:20px;background:#f8f9fa;padding:15px;border-radius:8px;">
+            <h3>Order Summary</h3>
+            <div id="order-details"></div>
+            <div style="border-top:1px solid #ddd;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;">
+              <strong>Total:</strong> <span id="final-total">₹0.00</span>
+            </div>
+          </div>
+          <div style="display:grid;gap:15px;">
+            <div class="payment-option upi-payment">UPI (PhonePe, GPay, Paytm)</div>
+            <div class="payment-option cod-payment">Cash on Delivery</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="upi-screen" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10001;align-items:center;justify-content:center;">
+      <div class="modal-content" style="background:white;padding:20px;border-radius:14px;width:90%;max-width:400px;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;">
+          <h2>Pay with UPI</h2>
+          <button id="back-to-payment" style="background:none;border:none;font-size:24px;">&larr;</button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+          <div style="font-size:50px;margin:20px;">💳</div>
+          <div class="form-group"><label>Enter UPI ID</label><input type="text" id="upi-id" placeholder="example@upi"></div>
+          <div class="form-group"><label>Name on UPI</label><input type="text" id="upi-name" placeholder="Enter name"></div>
+          <div style="margin:20px 0;background:#f8f9fa;padding:15px;border-radius:8px;">
+            <div style="display:flex;justify-content:space-between;"><span>Amount:</span> <span id="upi-amount" style="font-weight:bold;">₹0.00</span></div>
+          </div>
+          <button id="proceed-upi" class="btn primary" style="width:100%;">Proceed to Pay</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    (function(){
+      // DOM Elements
+      const container = document.getElementById('category-products');
+      const items = document.querySelectorAll('.items-grid .item');
+      const cartBtn = document.getElementById('cart-btn');
+      const cartCount = document.getElementById('cart-count');
+      const cartDrawer = document.getElementById('cart-drawer');
+      const cartList = document.getElementById('cart-list');
+      const cartTotal = document.getElementById('cart-total');
+      const clearBtn = document.getElementById('clear-cart');
+      const checkoutBtn = document.getElementById('checkout');
+
+      // Cart Functions
+      function loadCart(){ try{ return JSON.parse(localStorage.getItem('jh-cart')||'[]'); }catch(e){ return []; } }
+      function saveCart(cart){ localStorage.setItem('jh-cart', JSON.stringify(cart)); }
+      function updateCartBadge(){
+        const cart = loadCart();
+        if(cart.length===0){ cartCount.style.display='none'; }
+        else{ cartCount.style.display='inline-block'; cartCount.textContent = cart.reduce((s,i)=>s+i.qty,0); }
+      }
+      function renderCart(){
+        const cart = loadCart();
+        cartList.innerHTML = '';
+        let total = 0;
+        cart.forEach((it, idx)=>{
+          const priceNum = Number(String(it.price).replace(/[^0-9.]/g,''));
+          total += priceNum * it.qty;
+          const el = document.createElement('div');
+          el.className = 'cart-item';
+          el.innerHTML = `<img src="${it.img}" alt="${it.title}" /><div class="meta"><strong>${it.title}</strong><div>Qty: ${it.qty}</div></div><div style="margin-left:8px"><strong>₹${(priceNum*it.qty).toFixed(2)}</strong></div>`;
+          cartList.appendChild(el);
+        });
+        cartTotal.textContent = `₹${total.toFixed(2)}`;
+      }
+      function addToCart(item){
+        const cart = loadCart();
+        const existing = cart.find(c=>c.title===item.title);
+        if(existing){ existing.qty += 1; }
+        else{ cart.push({...item, qty:1}); }
+        saveCart(cart); updateCartBadge(); openCart();
+      }
+      function openCart(){ cartDrawer.style.display='block'; renderCart(); }
+      function closeCart(){ cartDrawer.style.display='none'; }
+
+      // Payment Modal Functions
+      function showPaymentModal() {
+        const cart = loadCart();
+        if (cart.length === 0) return;
+        let total = 0;
+        cart.forEach(item => total += (Number(String(item.price).replace(/[^0-9.]/g,'')) * item.qty));
+        
+        const orderDetailsEl = document.getElementById('order-details');
+        orderDetailsEl.innerHTML = '';
+        cart.forEach(item => {
+          const itemEl = document.createElement('div');
+          itemEl.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:8px';
+          itemEl.innerHTML = `<span>${item.title} × ${item.qty}</span><span>₹${(Number(String(item.price).replace(/[^0-9.]/g,'')) * item.qty).toFixed(2)}</span>`;
+          orderDetailsEl.appendChild(itemEl);
+        });
+        document.getElementById('final-total').textContent = `₹${total.toFixed(2)}`;
+        
+        const modal = document.getElementById('payment-modal');
+        modal.style.display = 'flex';
+        setTimeout(() => { modal.style.opacity = '1'; modal.style.visibility = 'visible'; }, 10);
+      }
+
+      function closePaymentModal() {
+        const modal = document.getElementById('payment-modal');
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+      }
+
+      // UPI Logic
+      function showUPIScreen() {
+        const total = document.getElementById('final-total').textContent;
+        document.getElementById('upi-amount').textContent = total;
+        document.getElementById('payment-modal').style.display = 'none';
+        const upiScreen = document.getElementById('upi-screen');
+        upiScreen.style.display = 'flex';
+        setTimeout(() => { upiScreen.style.opacity = '1'; upiScreen.style.visibility = 'visible'; }, 10);
+      }
+
+      function backToPayment() {
+        document.getElementById('upi-screen').style.display = 'none';
+        document.getElementById('payment-modal').style.display = 'flex';
+      }
+
+      // ==========================================
+      // PROCESS UPI PAYMENT (UPDATED TO SAVE TO DB)
+      // ==========================================
+      async function processUPIPayment() {
+        const upiId = document.getElementById('upi-id').value.trim();
+        const upiName = document.getElementById('upi-name').value.trim();
+        
+        if (!upiId || !upiName) { alert('Please enter all UPI details'); return; }
+        
+        const proceedBtn = document.getElementById('proceed-upi');
+        proceedBtn.textContent = 'Processing...';
+        proceedBtn.disabled = true;
+
+        try {
+            // 1. Gather Order Data
+            const cart = loadCart();
+            const totalText = document.getElementById('upi-amount').textContent;
+            const amount = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+
+            // 2. Insert into Supabase
+            const { error } = await supabaseClient.from('orders').insert([{
+                customer_name: upiName,
+                upi_id: upiId,
+                amount: amount,
+                items: cart,
+                payment_method: 'UPI',
+                status: 'Paid'
+            }]);
+
+            if (error) throw error;
+
+            // 3. Success UI
+            alert('Payment successful! Order saved to database.');
+            localStorage.removeItem('jh-cart');
+            updateCartBadge();
+            closePaymentModal();
+            document.getElementById('upi-screen').style.display = 'none';
+            closeCart();
+
+        } catch (err) {
+            console.error('Payment Error:', err);
+            alert('Payment failed: ' + err.message);
+        } finally {
+            proceedBtn.textContent = 'Proceed to Pay';
+            proceedBtn.disabled = false;
+        }
+      }
+
+      // Wiring up buttons
+      cartBtn.addEventListener('click', ()=>{ if(cartDrawer.style.display==='block') closeCart(); else openCart(); });
+      clearBtn.addEventListener('click', ()=>{ localStorage.removeItem('jh-cart'); renderCart(); updateCartBadge(); });
+      document.getElementById('close-cart').addEventListener('click', closeCart);
+      checkoutBtn.addEventListener('click', ()=>{ if(loadCart().length === 0) { alert('Cart empty!'); return; } showPaymentModal(); });
+      document.getElementById('close-payment-modal').addEventListener('click', closePaymentModal);
+      document.getElementById('back-to-payment').addEventListener('click', backToPayment);
+      document.getElementById('proceed-upi').addEventListener('click', processUPIPayment);
+      document.querySelector('.upi-payment').addEventListener('click', showUPIScreen);
+      
+      // Load products
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'categoryProducts') loadSellerProducts();
+      });
+
+      // Helper to render templates
+      function renderTemplate(title, cardsHtml){
+        container.style.display = 'block';
+        container.innerHTML = `<h2 style="font-size:40px;margin:18px 0 22px;color:#111;font-weight:700;">${title}</h2><div class="cards">${cardsHtml}</div>`;
+        container.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+      function makeCardsHtml(cards){
+        return cards.map(c=>`<div class="card"><div class="media" style="background-image:url('${c.img}')"></div><div class="body"><h3>${c.title}</h3><p>${c.desc}</p><div style="display:flex;justify-content:space-between;align-items:center"><strong class="price">${c.price}</strong><button class="add-to-cart" data-title="${c.title}" data-price="${c.price}" data-img="${c.img}" style="border-radius:999px;border:none;background:#fff;box-shadow:0 6px 16px rgba(16,24,40,0.06);width:40px;height:40px;cursor:pointer">+</button></div></div></div>`).join('');
+      }
+      // Click Handlers for Categories
+      items.forEach(it => {
+        it.addEventListener('click', () => { 
+            const cat = it.dataset.cat;
+            // Simple render for demo - you can expand this with your specific category logic
+            const localData = JSON.parse(localStorage.getItem('categoryProducts') || '{}');
+            const items = localData[cat] || [];
+            // Add at least one default item if empty for demo
+            if(items.length === 0) items.push({title:`${cat} Item`, desc:'Handcrafted', price:'₹150', img: it.querySelector('img').src});
+            renderTemplate(cat.toUpperCase(), makeCardsHtml(items));
+        });
+      });
+
+      // Add to cart click delegation
+      document.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.add-to-cart');
+        if(btn) {
+           addToCart({ title: btn.dataset.title, price: btn.dataset.price, img: btn.dataset.img });
+           alert('Added to cart');
+        }
+      });
+
+      // Seller Logic
+      const sellModal = document.getElementById('sell-modal');
+      const sellForm = document.getElementById('sell-product-form');
+      document.getElementById('nav-sell').addEventListener('click', ()=>{ sellModal.style.display='flex'; setTimeout(()=>{sellModal.style.opacity='1';sellModal.style.visibility='visible'},10); });
+      document.getElementById('close-sell-modal').addEventListener('click', ()=>{ sellModal.style.display='none'; });
+      
+      // Image Preview
+      document.getElementById('product-image').addEventListener('change', function(e){
+         if(e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { document.getElementById('preview-img').src = ev.target.result; document.getElementById('image-preview').style.display='block'; };
+            reader.readAsDataURL(e.target.files[0]);
+         }
+      });
+
+      sellForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = sellForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; submitBtn.textContent = 'Uploading...';
+        
+        try {
+            const vendorId = document.getElementById('vendor-id').value;
+            const title = document.getElementById('product-name').value;
+            const desc = document.getElementById('product-description').value;
+            const category = document.getElementById('product-category').value;
+            const price = document.getElementById('product-price').value;
+            const imgFile = document.getElementById('product-image').files[0];
+            const qrFile = document.getElementById('upi-qr-image').files[0];
+
+            const imgUrl = await uploadToSupabase(imgFile);
+            const qrUrl = qrFile ? await uploadToSupabase(qrFile) : null;
+
+            if(!imgUrl) throw new Error("Image upload failed");
+
+            const { error } = await supabaseClient.from('marketplace_products').insert({
+                vendorId: vendorId, title: title, description: desc, category: category, price: price, imageUrl: imgUrl, upiQrUrl: qrUrl
+            });
+
+            if(error) throw error;
+            alert('Product listed successfully!');
+            await fetchMarketplaceProducts();
+            document.getElementById('close-sell-modal').click();
+            sellForm.reset();
+        } catch (err) {
+            console.error(err);
+            alert('Error: ' + err.message);
+        } finally {
+            submitBtn.disabled = false; submitBtn.textContent = 'Add Product';
+        }
+      });
+
+      updateCartBadge();
+    })();
+  </script>
+</body>
+</html>

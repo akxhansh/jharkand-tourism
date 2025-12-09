@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Book Now — Jharkhand Stays</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --maroon:#7b1f31;
+      --gold:#f2c94c;
+      font-family: Inter, system-ui, Arial;
+      color:#222;
+    }
+    body {
+      margin:0;
+      background:#f6f6f6;
+      padding:24px;
+    }
+    h1 {
+      font-size:24px;
+      margin:0;
+      color:var(--maroon);
+    }
+    .subtitle {
+      color:#666;
+      margin-bottom:20px;
+    }
+    .container {
+      max-width:760px;
+      margin:auto;
+      background:#fff;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 8px 28px rgba(0,0,0,.12);
+    }
+    label {
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+      color:#333;
+    }
+    input, select, textarea {
+      width:100%;
+      padding:10px;
+      border:1px solid #ddd;
+      border-radius:8px;
+      font-size:14px;
+      box-sizing:border-box;
+    }
+    textarea { resize:vertical; }
+    .row {
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .col-2 { flex:1 1 48%; }
+    .col-3 { flex:1 1 32%; }
+    .btn {
+      padding:12px 20px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-size:15px;
+      font-weight:600;
+      transition: background-color 0.3s ease;
+    }
+    .btn.primary {
+      background:var(--maroon);
+      color:white;
+      width:100%;
+      margin-top:20px;
+    }
+    .btn.success {
+      background:#4CAF50 !important;
+      color:white;
+    }
+    .btn:disabled {
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+    .errors {
+      color:#b00020;
+      font-size:13px;
+      margin-top:10px;
+    }
+    .total-box {
+      margin-top:15px;
+      font-size:18px;
+      font-weight:700;
+      color:var(--maroon);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>Book Your Stay</h1>
+    <div class="subtitle">Fill registration to confirm booking</div>
+
+    <form id="bookingForm">
+
+      <input type="hidden" id="propertyId">
+      <div class="row">
+        <div class="col-2">
+          <label>Property</label>
+          <input type="text" id="propertyName" readonly>
+        </div>
+
+        <div class="col-3">
+          <label>Booking ID</label>
+          <input type="text" id="bookingId" readonly>
+        </div>
+
+        <div class="col-3">
+          <label>Price / night (₹)</label>
+          <input type="number" id="pricePerNight" readonly>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-2">
+          <label>Full Name</label>
+          <input type="text" id="fullName" required>
+        </div>
+        <div class="col-2">
+          <label>Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="col-2">
+          <label>Phone (India)</label>
+          <input type="tel" id="phone" placeholder="+91xxxxxxxxxx" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-2">
+          <label>Check-in</label>
+          <input type="date" id="checkIn" required>
+        </div>
+
+        <div class="col-2">
+          <label>Check-out</label>
+          <input type="date" id="checkOut" required>
+        </div>
+
+        <div class="col-3">
+          <label>Rooms</label>
+          <input type="number" id="rooms" value="1" min="1" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-3">
+          <label>Guests (Adults)</label>
+          <input type="number" id="adults" value="2" min="1" required>
+        </div>
+
+        <div class="col-3">
+          <label>Children</label>
+          <input type="number" id="children" value="0" min="0">
+        </div>
+
+        <div class="col-3">
+          <label>Room Type</label>
+          <select id="roomType">
+            <option>Standard</option>
+            <option>Deluxe</option>
+            <option>Family</option>
+            <option>Dorm</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label>Special Requests</label>
+        <textarea id="notes" rows="3"></textarea>
+      </div>
+
+      <div class="total-box" id="totalBox">Total: —</div>
+
+      <div class="errors" id="errors"></div>
+
+      <button type="submit" class="btn primary">Confirm Booking</button>
+
+    </form>
+
+  </div>
+
+
+<script>
+// ==========================================
+// 1. SUPABASE CONFIGURATION
+// ==========================================
+const SUPABASE_URL = "https://twyklobclarqdpkmumkm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eWtsb2JjbGFycWRwa211bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNTcxMTYsImV4cCI6MjA4MDgzMzExNn0.edD7uIYk0DE00KAFFMpTVApg3__ilwvLMVfmvv-oRh0"; // <--- PASTE YOUR KEY HERE
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------------------------
+   Prefill Property From URL
+---------------------------- */
+const url = new URL(window.location.href);
+document.getElementById("propertyName").value = url.searchParams.get("name") || "";
+document.getElementById("propertyId").value = url.searchParams.get("id") || "";
+document.getElementById("pricePerNight").value = url.searchParams.get("price") || "";
+
+/* ---------------------------
+   Auto Booking ID
+---------------------------- */
+function genBookingId() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const r = Math.random().toString(36).substring(2,6).toUpperCase();
+  return `BN-${y}${m}${dd}-${r}`;
+}
+document.getElementById("bookingId").value = genBookingId();
+
+/* ---------------------------
+   Price Summary Calculation
+---------------------------- */
+function updateTotal() {
+  const price = Number(document.getElementById("pricePerNight").value);
+  const rooms = Number(document.getElementById("rooms").value);
+  const ci = document.getElementById("checkIn").value;
+  const co = document.getElementById("checkOut").value;
+
+  if (!ci || !co) return;
+
+  const diff = (new Date(co) - new Date(ci)) / (1000*60*60*24);
+  const nights = Math.max(1, diff);
+  const total = nights * rooms * price;
+
+  document.getElementById("totalBox").innerText =
+    `Total: ₹${total.toLocaleString()} (${nights} nights)`;
+    
+  return `₹${total.toLocaleString()}`; // return value for database
+}
+
+["checkIn","checkOut","rooms"].forEach(id => {
+  document.getElementById(id).addEventListener("change", updateTotal);
+});
+
+/* ---------------------------
+   Form Validation + Submit to Supabase
+---------------------------- */
+document.getElementById("bookingForm").addEventListener("submit", async function(e){
+  e.preventDefault();
+
+  const errors = [];
+  const phone = document.getElementById("phone").value;
+
+  if (!/^(\+91)?[6-9]\d{9}$/.test(phone)) {
+    errors.push("Enter valid Indian phone number.");
+  }
+
+  const ci = document.getElementById("checkIn").value;
+  const co = document.getElementById("checkOut").value;
+
+  if (new Date(ci) >= new Date(co)) {
+    errors.push("Check-out must be after Check-in.");
+  }
+
+  if (errors.length) {
+    document.getElementById("errors").innerHTML = errors.join("<br>");
+    return;
+  }
+
+  // Disable button
+  const submitButton = document.querySelector('.btn.primary');
+  const originalText = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = 'Processing...';
+  document.getElementById("errors").innerHTML = "";
+
+  try {
+    // 1. Gather Data
+    const bookingData = {
+      bookingId: document.getElementById("bookingId").value,
+      propertyName: document.getElementById("propertyName").value,
+      fullName: document.getElementById("fullName").value,
+      email: document.getElementById("email").value,
+      phone: document.getElementById("phone").value,
+      checkIn: document.getElementById("checkIn").value,
+      checkOut: document.getElementById("checkOut").value,
+      rooms: Number(document.getElementById("rooms").value),
+      adults: Number(document.getElementById("adults").value),
+      children: Number(document.getElementById("children").value),
+      roomType: document.getElementById("roomType").value,
+      notes: document.getElementById("notes").value,
+      totalPrice: document.getElementById("totalBox").innerText,
+      status: 'Confirmed'
+    };
+
+    // 2. Insert into Supabase
+    const { error } = await supabaseClient
+      .from('bookings')
+      .insert([bookingData]);
+
+    if (error) throw error;
+
+    // 3. Success UI
+    submitButton.classList.add('success');
+    submitButton.textContent = 'Booking Confirmed!';
+    document.getElementById("errors").innerHTML = 
+      `<span style="color: #4CAF50; font-weight: bold;">
+        Success! Your Booking ID: ${bookingData.bookingId} has been saved.
+      </span>`;
+      
+    // Optional: Reset form or redirect
+    // document.getElementById("bookingForm").reset();
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("errors").innerText = "Error saving booking: " + err.message;
+    submitButton.disabled = false;
+    submitButton.textContent = originalText;
+  }
+});
+
+</script>
+
+</body>
+</html>
