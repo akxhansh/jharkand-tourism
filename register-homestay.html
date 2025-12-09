@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Homestay Registration — Jharkhand Tourism (Supabase)</title>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: #f4f7fb;
+      color: #222
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 36px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06)
+    }
+
+    h1 {
+      margin: 0 0 14px
+    }
+
+    form .row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    .row .col {
+      flex: 1
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #444
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d6dbe5;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical
+    }
+
+    .file-row {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600
+    }
+
+    .btn-primary {
+      background: #2b7be9;
+      color: #fff
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #222
+    }
+
+    .small {
+      font-size: 13px;
+      color: #666
+    }
+
+    .progress {
+      height: 10px;
+      background: #eef3ff;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 8px
+    }
+
+    .progress>span {
+      display: block;
+      height: 100%;
+      background: #2b7be9;
+      width: 0%;
+      transition: width .2s
+    }
+
+    .indeterminate {
+      animation: indeterminate 1.2s linear infinite;
+      background: linear-gradient(90deg, #2b7be9 0%, #6ba8ff 50%, #2b7be9 100%);
+      background-size: 200% 100%
+    }
+
+    @keyframes indeterminate {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .notice {
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px
+    }
+
+    .notice.success {
+      background: #e6ffed;
+      color: #0b6b2b
+    }
+
+    .notice.error {
+      background: #ffeaea;
+      color: #a30e11
+    }
+
+    img.preview {
+      max-width: 160px;
+      border-radius: 8px;
+      border: 1px solid #e6e9ef
+    }
+
+    .meta {
+      font-size: 13px;
+      color: #666;
+      margin-top: 6px
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Owner Homestay Registration</h1>
+    <p class="small">Fill details and upload a photo + supporting document. Admin will review and approve.</p>
+
+    <form id="homestay-form">
+      <div class="row">
+        <div class="col">
+          <label for="ownerName">Owner full name *</label>
+          <input id="ownerName" name="ownerName" type="text" required>
+        </div>
+        <div class="col">
+          <label for="ownerPhone">Phone number *</label>
+          <input id="ownerPhone" name="ownerPhone" type="tel" required placeholder="9876543210">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="ownerEmail">Email (optional)</label>
+          <input id="ownerEmail" name="ownerEmail" type="email" placeholder="owner@example.com">
+        </div>
+        <div class="col">
+          <label for="homestayName">Homestay name *</label>
+          <input id="homestayName" name="homestayName" type="text" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="district">District *</label>
+          <input id="district" name="district" type="text" required placeholder="Ranchi">
+        </div>
+        <div class="col">
+          <label for="capacity">Guest capacity</label>
+          <input id="capacity" name="capacity" type="text" placeholder="e.g. 6">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="address">Address *</label>
+          <textarea id="address" name="address" required placeholder="Full postal address"></textarea>
+        </div>
+      </div>
+
+      <div class="row file-row">
+        <div>
+          <label for="photo">Homestay photo *</label>
+          <input id="photo" name="photo" type="file" accept="image/*" required>
+          <div id="photo-preview"></div>
+        </div>
+
+        <div>
+          <label for="document">Supporting document (ID/property) *</label>
+          <input id="document" name="document" type="file" accept=".pdf,image/*" required>
+          <div id="doc-name" class="small" style="margin-top:6px;color:#555"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+        <button type="submit" id="submitBtn" class="btn btn-primary">Submit Application</button>
+        <button type="button" id="resetBtn" class="btn btn-secondary">Reset</button>
+        <div id="upload-progress" style="flex:1"></div>
+      </div>
+
+      <div id="messageArea"></div>
+    </form>
+
+    <hr style="margin:20px 0">
+
+    <p class="small">After submission the application status will be <strong>pending</strong>. Admin can approve/reject
+      from the dashboard.</p>
+  </div>
+
+  <script>
+    /**********************************************************************
+     *  IMPORTANT:
+     *  1) Create a Supabase project: https://app.supabase.com
+     *  2) Create two storage buckets: "homestay_photos" and "homestay_docs"
+     *     - For simple viewing, mark them public or configure RLS / signed URLs as needed
+     *  3) Create a table "homestay_applications" with columns:
+     *     id (uuid) primary key, name text, phone text, email text, homestayName text,
+     *     district text, capacity text, address text, imageURL text, documentURL text,
+     *     status text default 'pending', created_at timestamp default now()
+     *  4) Replace SUPABASE_URL and SUPABASE_ANON_KEY below with YOUR project values
+     **********************************************************************/
+
+    const SUPABASE_URL = "https://twyklobclarqdpkmumkm.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eWtsb2JjbGFycWRwa211bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNTcxMTYsImV4cCI6MjA4MDgzMzExNn0.edD7uIYk0DE00KAFFMpTVApg3__ilwvLMVfmvv-oRh0";
+
+    // init
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const form = document.getElementById('homestay-form');
+    const photoInput = document.getElementById('photo');
+    const docInput = document.getElementById('document');
+    const msgArea = document.getElementById('messageArea');
+    const photoPreview = document.getElementById('photo-preview');
+    const docName = document.getElementById('doc-name');
+    const uploadProgressContainer = document.getElementById('upload-progress');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // helper: show message
+    function showMessage(text, type = 'success') {
+      msgArea.innerHTML = '<div class="notice ' + (type === 'success' ? 'success' : 'error') + '">' + text + '</div>';
+    }
+
+    // preview chosen image
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files[0];
+      photoPreview.innerHTML = '';
+      if (!file) return;
+      const img = document.createElement('img');
+      img.className = 'preview';
+      img.src = URL.createObjectURL(file);
+      photoPreview.appendChild(img);
+    });
+
+    // show doc filename
+    docInput.addEventListener('change', () => {
+      docName.textContent = docInput.files[0] ? docInput.files[0].name : '';
+    });
+
+    // reset form
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      form.reset();
+      photoPreview.innerHTML = '';
+      docName.textContent = '';
+      uploadProgressContainer.innerHTML = '';
+      msgArea.innerHTML = '';
+    });
+
+    // create a simple indeterminate progress UI (Supabase JS doesn't provide upload progress callback in browser)
+    function showIndeterminateProgress() {
+      uploadProgressContainer.innerHTML = '';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'progress';
+      const bar = document.createElement('span');
+      bar.className = 'indeterminate';
+      bar.style.width = '100%';
+      wrapper.appendChild(bar);
+      uploadProgressContainer.appendChild(wrapper);
+    }
+
+    function clearProgress() {
+      uploadProgressContainer.innerHTML = '';
+    }
+
+    // helper: upload file to supabase storage and return public URL
+    async function uploadFileToSupabase(file, bucket, destPath) {
+      // destPath should be unique, e.g. "homestay_photos/phone_ts_filename.jpg"
+      const { data, error } = await supabase.storage.from(bucket).upload(destPath, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      // get public url (if bucket is public) OR use createSignedUrl for private buckets
+      const { data: publicURLData, error: publicUrlError } = supabase.storage.from(bucket).getPublicUrl(destPath);
+      if (publicUrlError) {
+        // fallback: try signed URL valid for 1 hour
+        const { data: signed, error: signedErr } = await supabase.storage.from(bucket).createSignedUrl(destPath, 60 * 60);
+        if (signedErr) throw signedErr;
+        return signed.signedUrl;
+      }
+      return publicURLData.publicUrl;
+    }
+
+    // form submit handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgArea.innerHTML = '';
+
+      const ownerName = document.getElementById('ownerName').value.trim();
+      const ownerPhone = document.getElementById('ownerPhone').value.trim();
+      const ownerEmail = document.getElementById('ownerEmail').value.trim();
+      const homestayName = document.getElementById('homestayName').value.trim();
+      const district = document.getElementById('district').value.trim();
+      const capacity = document.getElementById('capacity').value.trim();
+      const address = document.getElementById('address').value.trim();
+
+      // basic validation
+      if (!ownerName || !ownerPhone || !homestayName || !district || !address) {
+        showMessage('Please fill all required fields marked with *', 'error');
+        return;
+      }
+      if (!photoInput.files[0] || !docInput.files[0]) {
+        showMessage('Please upload both photo and supporting document.', 'error');
+        return;
+      }
+
+      try {
+        // disable submit while uploading
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading...';
+        showIndeterminateProgress();
+        showMessage('Uploading files... Please wait', 'success');
+
+        const ts = Date.now();
+        const photoFile = photoInput.files[0];
+        const docFile = docInput.files[0];
+
+        // sanitize filenames a bit
+        const sanitize = s => s.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-\.]/g, '');
+        const photoPath = `${sanitize(ownerPhone)}_${ts}_${sanitize(photoFile.name)}`;
+        const docPath = `${sanitize(ownerPhone)}_${ts}_${sanitize(docFile.name)}`;
+
+        // Uploads to buckets (ensure these buckets exist in Supabase)
+        const photoURL = await uploadFileToSupabase(photoFile, 'homestay_photos', photoPath);
+        const docURL = await uploadFileToSupabase(docFile, 'homestay_docs', docPath);
+
+        // build application object
+        const application = {
+          name: ownerName,
+          phone: ownerPhone,
+          email: ownerEmail || null,
+          homestayName: homestayName,
+          district: district,
+          capacity: capacity || null,
+          address: address,
+          imageURL: photoURL,
+          documentURL: docURL,
+          status: "pending"
+          // created_at will default to now() if table is setup accordingly
+        };
+
+        // insert into Supabase table
+        const { data: insertData, error: insertErr } = await supabase
+          .from('homestay_applications')
+          .insert([application])
+          .select()
+          .single();
+
+        if (insertErr) throw insertErr;
+
+        clearProgress();
+        showMessage('Application submitted successfully! Application ID: ' + insertData.id, 'success');
+
+        // reset form
+        form.reset();
+        photoPreview.innerHTML = '';
+        docName.textContent = '';
+      } catch (err) {
+        console.error(err);
+        showMessage('Error submitting application: ' + (err.message || JSON.stringify(err)), 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+        clearProgress();
+      }
+    });
+  </script>
+</body>
+
+</html>

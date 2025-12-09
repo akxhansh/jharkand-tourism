@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vendor Registration — Jharkhand Marketplace</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --accent: #0f62fe;
+      --muted: #666
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+      background: #f6f8fb;
+      margin: 0;
+      padding: 24px
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(12, 20, 48, 0.06);
+      padding: 20px;
+      max-width: 920px;
+      margin: 12px auto
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 20px
+    }
+
+    p.lead {
+      margin: 0 0 18px;
+      color: var(--muted)
+    }
+
+    form .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #222
+    }
+
+    input[type=text],
+    input[type=email],
+    input[type=password],
+    input[type=tel],
+    input[type=file],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #e6e9ef;
+      background: #fafbff
+    }
+
+    textarea {
+      height: 90px
+    }
+
+    .col {
+      flex: 1 1 220px;
+      min-width: 220px
+    }
+
+    .full {
+      flex-basis: 100%
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--accent);
+      border: 1px solid #e6e9ef
+    }
+
+    .notice {
+      background: #f1f8ff;
+      border-left: 4px solid #cfe0ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin: 12px 0
+    }
+
+    .preview-img {
+      max-height: 80px;
+      border-radius: 6px;
+      margin-right: 8px
+    }
+
+    .flex {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .qr-box {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .success {
+      color: green
+    }
+
+    .error {
+      color: #c41a16
+    }
+
+    footer {
+      max-width: 920px;
+      margin: 12px auto;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .small {
+      font-size: 13px
+    }
+
+    .field-error {
+      color: #c41a16;
+      font-size: 12px;
+      margin-top: 6px
+    }
+
+    .summary {
+      background: #f8fff6;
+      border-left: 4px solid #bfeccf;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 12px
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Vendor Registration</h1>
+    <p class="lead">Register your business to start selling Jharkhand tribal products</p>
+
+    <div class="notice">
+      <p>All fields marked with * are required</p>
+    </div>
+
+    <form id="vendorForm" novalidate>
+      <div class="row">
+        <div class="col">
+          <label for="vendorName">Full Name *</label>
+          <input type="text" id="vendorName" name="vendorName" required>
+          <div class="field-error" id="errVendorName"></div>
+        </div>
+        <div class="col">
+          <label for="vendorBusinessName">Business Name *</label>
+          <input type="text" id="vendorBusinessName" name="vendorBusinessName" required>
+          <div class="field-error" id="errBusinessName"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="vendorEmail">Email *</label>
+          <input type="email" id="vendorEmail" name="vendorEmail" required>
+          <div class="field-error" id="errEmail"></div>
+        </div>
+        <div class="col">
+          <label for="vendorPhone">Phone *</label>
+          <input type="tel" id="vendorPhone" name="vendorPhone" required placeholder="10 digits">
+          <div class="field-error" id="errPhone"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="vendorCategory">Category *</label>
+          <select id="vendorCategory" name="vendorCategory" required>
+            <option value="">Select a category</option>
+            <option value="sohrai">Sohrai Art</option>
+            <option value="stone">Stone Carving</option>
+            <option value="lac">Lac Bangles</option>
+            <option value="khadi">Khadi Handloom</option>
+            <option value="bamboo">Bamboo Craft</option>
+            <option value="dhokra">Dhokra Craft</option>
+            <option value="jute">Jute Products</option>
+            <option value="munda">Munda Jewelry</option>
+          </select>
+          <div class="field-error" id="errCategory"></div>
+        </div>
+        <div class="col">
+          <label for="vendorGST">GST Number (Optional)</label>
+          <input type="text" id="vendorGST" name="vendorGST">
+        </div>
+      </div>
+
+      <div class="row full">
+        <div class="col">
+          <label for="vendorAddress">Address *</label>
+          <textarea id="vendorAddress" name="vendorAddress" required></textarea>
+          <div class="field-error" id="errAddress"></div>
+        </div>
+      </div>
+
+      <div class="row full">
+        <div class="col">
+          <label for="vendorDescription">Business Description *</label>
+          <textarea id="vendorDescription" name="vendorDescription" required></textarea>
+          <div class="field-error" id="errDescription"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="vendorAadhaar">Aadhaar Card (image) *</label>
+          <input type="file" id="vendorAadhaar" name="vendorAadhaar" accept="image/*" required>
+          <div class="flex" id="aadhaarPreview"></div>
+          <div class="field-error" id="errAadhaar"></div>
+        </div>
+        <div class="col">
+          <label for="vendorPhoto">Shop Photo (image) *</label>
+          <input type="file" id="vendorPhoto" name="vendorPhoto" accept="image/*" required>
+          <div class="flex" id="photoPreview"></div>
+          <div class="field-error" id="errPhoto"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="vendorBankAccount">Bank Account Number *</label>
+          <input type="text" id="vendorBankAccount" name="vendorBankAccount" required>
+          <div class="field-error" id="errBankAccount"></div>
+        </div>
+        <div class="col">
+          <label for="vendorBankIFSC">IFSC Code *</label>
+          <input type="text" id="vendorBankIFSC" name="vendorBankIFSC" required placeholder="e.g., SBIN0000001">
+          <div class="field-error" id="errIFSC"></div>
+        </div>
+      </div>
+
+      <div class="row full">
+        <div class="col">
+          <label for="vendorUPI">UPI ID (Optional)</label>
+          <input type="text" id="vendorUPI" name="vendorUPI" placeholder="example@upi">
+          <div class="qr-box" id="upiQRContainer" style="display:none; margin-top:10px;">
+            <div id="qrcode"></div>
+            <div>Scan to pay</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row full">
+        <div class="col">
+          <label for="vendorPassword">Password *</label>
+          <input type="password" id="vendorPassword" name="vendorPassword" required>
+          <div class="field-error" id="errPassword"></div>
+        </div>
+        <div class="col">
+          <label for="vendorConfirmPassword">Confirm Password *</label>
+          <input type="password" id="vendorConfirmPassword" name="vendorConfirmPassword" required>
+          <div class="field-error" id="errConfirmPassword"></div>
+        </div>
+      </div>
+
+      <div class="row full">
+        <div class="col">
+          <input type="checkbox" id="vendorAgreement" name="vendorAgreement" required>
+          <label for="vendorAgreement" style="display:inline;">I agree to the Terms and Conditions *</label>
+          <div class="field-error" id="errAgreement"></div>
+        </div>
+      </div>
+
+      <div class="row full" style="margin-top:20px;">
+        <div class="col">
+          <button type="submit" class="btn" id="submitBtn">Register & Pay ₹50</button>
+          <button type="button" class="btn secondary" id="resetBtn" style="margin-left:10px;">Cancel</button>
+        </div>
+      </div>
+
+      <div class="row full" style="margin-top:20px; text-align: center;">
+        <div class="col">
+          <img id="merchantQR" src="https://i.ibb.co/fs7Wz08/Whats-App-Image-2025-12-09-at-05-23-34.jpg"
+            alt="Payment QR Code" style="max-width: 300px; margin: 0 auto; display: block;">
+          <p style="margin: 10px 0 0; font-weight: bold; color: #0f62fe;">Pay ₹50 for registration</p>
+          <button type="button" class="btn" id="paymentCompleteBtn" style="margin-top: 20px;">Click here after
+            payment</button>
+        </div>
+      </div>
+
+      <div id="message" style="margin-top:15px;"></div>
+      <div id="summaryContainer"></div>
+    </form>
+  </div>
+
+  <footer>
+    <p>© 2025 Jharkhand Tribal Products Marketplace</p>
+  </footer>
+
+  <script>
+    (function () {
+
+      // ============================================================
+      // 1. SUPABASE CONFIGURATION
+      // Replace these with your actual Project URL and Anon Key
+      // ============================================================
+      const SUPABASE_URL = "https://twyklobclarqdpkmumkm.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eWtsb2JjbGFycWRwa211bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNTcxMTYsImV4cCI6MjA4MDgzMzExNn0.edD7uIYk0DE00KAFFMpTVApg3__ilwvLMVfmvv-oRh0";
+
+      // Initialize Supabase
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+      // -- Helper utilities --
+      const $ = id => document.getElementById(id);
+      const showFieldError = (id, msg) => { $(id).textContent = msg || ''; };
+      const clearAllFieldErrors = () => {
+        ['errVendorName', 'errBusinessName', 'errEmail', 'errPhone', 'errCategory', 'errAddress', 'errDescription',
+          'errAadhaar', 'errPhoto', 'errBankAccount', 'errIFSC', 'errPassword', 'errConfirmPassword', 'errAgreement']
+          .forEach(id => showFieldError(id, ''));
+      };
+      const isNumeric = str => /^\d+$/.test(String(str).trim());
+
+      // -- Validation rules --
+      function validateForm() {
+        clearAllFieldErrors();
+        let valid = true;
+
+        const name = $('vendorName').value.trim();
+        const business = $('vendorBusinessName').value.trim();
+        const email = $('vendorEmail').value.trim();
+        const phone = $('vendorPhone').value.trim();
+        const category = $('vendorCategory').value;
+        const address = $('vendorAddress').value.trim();
+        const desc = $('vendorDescription').value.trim();
+        const aadhaarFile = $('vendorAadhaar').files[0];
+        const photoFile = $('vendorPhoto').files[0];
+        const bankAccount = $('vendorBankAccount').value.trim();
+        const ifsc = $('vendorBankIFSC').value.trim();
+        const pwd = $('vendorPassword').value;
+        const cpwd = $('vendorConfirmPassword').value;
+        const agreement = $('vendorAgreement').checked;
+
+        if (!name) { showFieldError('errVendorName', 'Full name is required'); valid = false; }
+        if (!business) { showFieldError('errBusinessName', 'Business name is required'); valid = false; }
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) { showFieldError('errEmail', 'Valid email is required'); valid = false; }
+        if (!phone || !/^\d{10}$/.test(phone)) { showFieldError('errPhone', 'Enter a valid 10-digit phone number'); valid = false; }
+        if (!category) { showFieldError('errCategory', 'Select a category'); valid = false; }
+        if (!address) { showFieldError('errAddress', 'Address is required'); valid = false; }
+        if (!desc) { showFieldError('errDescription', 'Description is required'); valid = false; }
+        if (!aadhaarFile) { showFieldError('errAadhaar', 'Please upload Aadhaar image'); valid = false; }
+        if (!photoFile) { showFieldError('errPhoto', 'Please upload shop photo'); valid = false; }
+        if (!bankAccount || !isNumeric(bankAccount) || bankAccount.length < 9) { showFieldError('errBankAccount', 'Enter a valid bank account number'); valid = false; }
+        if (!ifsc || !/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(ifsc)) { showFieldError('errIFSC', 'Enter a valid IFSC code'); valid = false; }
+        if (!pwd || pwd.length < 6) { showFieldError('errPassword', 'Password must be at least 6 characters'); valid = false; }
+        if (pwd !== cpwd) { showFieldError('errConfirmPassword', 'Passwords do not match'); valid = false; }
+        if (!agreement) { showFieldError('errAgreement', 'You must accept Terms & Conditions'); valid = false; }
+
+        return valid;
+      }
+
+      // -- File preview --
+      function previewImage(inputEl, previewContainerId) {
+        const preview = $(previewContainerId);
+        preview.innerHTML = '';
+        const file = inputEl.files && inputEl.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'preview-img';
+          img.alt = 'preview';
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // -- Vendor ID generator --
+      function generateVendorId() {
+        const t = Date.now().toString(36).toUpperCase();
+        const r = Math.random().toString(36).substring(2, 6).toUpperCase();
+        return `JH-V-${t}-${r}`;
+      }
+
+      // ============================================================
+      // 2. BACKEND LOGIC (SUPABASE UPLOAD & INSERT)
+      // ============================================================
+
+      // Helper: Upload a single file and return its public URL
+      async function uploadFileToSupabase(file, bucketName, filePath) {
+        // Upload
+        const { data, error } = await supabaseClient.storage
+          .from(bucketName)
+          .upload(filePath, file);
+
+        if (error) {
+          console.error(`Upload error for ${filePath}:`, error);
+          throw error;
+        }
+
+        // Get URL
+        const { data: publicUrlData } = supabaseClient.storage.from(bucketName).getPublicUrl(filePath);
+        return publicUrlData.publicUrl;
+      }
+
+      // Main function: Uploads images -> Inserts Data -> Returns Success/Fail
+      async function saveVendorToSupabase(vendorObj) {
+        showMessage('Uploading documents and saving data... Please wait.', 'success');
+
+        const aadhaarFile = $('vendorAadhaar').files[0];
+        const photoFile = $('vendorPhoto').files[0];
+        const timestamp = Date.now();
+
+        try {
+          // A. Define Paths
+          // We use the vendorID to make the filename unique and organized
+          const aadhaarPath = `${vendorObj.vendorId}_aadhaar_${timestamp}`;
+          const photoPath = `${vendorObj.vendorId}_photo_${timestamp}`;
+
+          // B. Upload Files (Parallel uploads for speed)
+          const [aadhaarUrl, photoUrl] = await Promise.all([
+            uploadFileToSupabase(aadhaarFile, 'vendor_files', aadhaarPath),
+            uploadFileToSupabase(photoFile, 'vendor_files', photoPath)
+          ]);
+
+          // C. Insert into Database
+          // Note: The keys here must match the Columns in your SQL table
+          const { error: dbError } = await supabaseClient
+            .from('vendors')
+            .insert([{
+              vendorId: vendorObj.vendorId,
+              vendorName: vendorObj.vendorName,
+              businessName: vendorObj.businessName,
+              email: vendorObj.email,
+              phone: vendorObj.phone,
+              category: vendorObj.category,
+              gst: vendorObj.gst,
+              address: vendorObj.address,
+              description: vendorObj.description,
+              bankAccount: vendorObj.bankAccount,
+              ifsc: vendorObj.ifsc,
+              upi: vendorObj.upi,
+              aadhaarURL: aadhaarUrl,
+              photoURL: photoUrl
+            }]);
+
+          if (dbError) throw dbError;
+
+          console.log("Supabase Insert Success");
+          return true;
+
+        } catch (err) {
+          console.error('Registration Error:', err);
+          showMessage(`Error saving data: ${err.message}`, 'error');
+          return false;
+        }
+      }
+
+      // -- UPI QR generation --
+      let upiQRCodeInstance = null;
+      function updateUpiQRCode(upiId) {
+        const container = $('upiQRContainer');
+        const qrcodeDiv = $('qrcode');
+        qrcodeDiv.innerHTML = '';
+        if (!upiId || !upiId.includes('@')) {
+          container.style.display = 'none';
+          return;
+        }
+        container.style.display = 'flex';
+        // Create QR with UPI payment URI
+        new QRCode(qrcodeDiv, {
+          text: `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent($('vendorBusinessName').value || 'Vendor')}`,
+          width: 100,
+          height: 100
+        });
+      }
+
+      // -- Show summary to user before payment --
+      function showSummary(vendor) {
+        const container = $('summaryContainer');
+        container.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'summary';
+        div.innerHTML = `
+          <strong>Registration ready</strong>
+          <p>Vendor ID: <strong>${vendor.vendorId}</strong></p>
+          <p>Name: ${vendor.vendorName} <br> Business: ${vendor.businessName} <br> Email: ${vendor.email}</p>
+          <p>Amount to pay: <strong>₹50</strong></p>
+        `;
+        container.appendChild(div);
+      }
+
+      // -- Payment simulation + TRIGGER SAVE --
+      async function simulatePaymentAndGenerateReceipt(vendor) {
+        const btn = $('paymentCompleteBtn');
+        btn.disabled = true;
+        const message = $('message');
+        message.innerHTML = '';
+
+        const countdown = document.createElement('div');
+        countdown.style.cssText = 'margin: 20px 0; font-size: 18px; font-weight: bold; color: #0f62fe; text-align: center;';
+
+        let seconds = 5; // Fast simulation
+        countdown.textContent = `Verifying payment: ${seconds} seconds...`;
+        message.appendChild(countdown);
+
+        const iv = setInterval(async () => {
+          seconds--;
+          countdown.textContent = `Verifying payment: ${seconds} seconds...`;
+
+          if (seconds <= 0) {
+            clearInterval(iv);
+            countdown.textContent = 'Payment confirmed ✓';
+            countdown.style.color = 'green';
+
+            // --- CRITICAL: CALL SUPABASE SAVE ---
+            const success = await saveVendorToSupabase(vendor);
+
+            if (success) {
+              // Generate PDF receipt only if backend save worked
+              generateReceiptPDF(vendor);
+
+              const msg = document.createElement('div');
+              msg.style.cssText = 'margin-top:12px;color:green;text-align:center;font-weight:bold';
+              msg.textContent = 'Registration Complete! Data saved to system.';
+              message.appendChild(msg);
+
+              btn.textContent = "Registration Done";
+            } else {
+              btn.disabled = false; // Re-enable if it failed
+            }
+          }
+        }, 1000);
+      }
+
+      // -- Generate PDF receipt using jsPDF --
+      async function generateReceiptPDF(vendor) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const left = 10;
+        let top = 14;
+        doc.setFontSize(16);
+        doc.text('PAYMENT RECEIPT', 105, top, { align: 'center' });
+        top += 8;
+        doc.setFontSize(10);
+        doc.text(`Vendor ID: ${vendor.vendorId}`, left, top);
+        top += 6;
+        doc.text(`Name: ${vendor.vendorName}`, left, top);
+        top += 6;
+        doc.text(`Business: ${vendor.businessName}`, left, top);
+        top += 6;
+        doc.text(`Email: ${vendor.email}`, left, top);
+        top += 6;
+        doc.text(`Phone: ${vendor.phone}`, left, top);
+        top += 8;
+        doc.text('Payment Details:', left, top);
+        top += 6;
+        doc.text(`Amount: ₹50`, left + 6, top);
+        top += 6;
+        doc.text(`Purpose: Registration Fee`, left + 6, top);
+        top += 6;
+        const now = new Date();
+        doc.text(`Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, left + 6, top);
+        top += 12;
+        doc.text('Thank you for registering with Jharkhand Tribal Products Marketplace', left, top);
+
+        // Embed small image
+        try {
+          if (vendor.aadhaarDataUrl) {
+            doc.addImage(vendor.aadhaarDataUrl, 'JPEG', 150, 20, 40, 30);
+          }
+        } catch (err) {
+          // ignore if image conversion fails
+        }
+
+        const fileName = `receipt_${vendor.vendorId}.pdf`;
+        doc.save(fileName);
+      }
+
+      // -- Build vendor object --
+      function buildVendorObject() {
+        const aadhaarFile = $('vendorAadhaar').files[0];
+        const photoFile = $('vendorPhoto').files[0];
+
+        const vendor = {
+          vendorId: generateVendorId(),
+          vendorName: $('vendorName').value.trim(),
+          businessName: $('vendorBusinessName').value.trim(),
+          email: $('vendorEmail').value.trim(),
+          phone: $('vendorPhone').value.trim(),
+          category: $('vendorCategory').value,
+          gst: $('vendorGST').value.trim(),
+          address: $('vendorAddress').value.trim(),
+          description: $('vendorDescription').value.trim(),
+          bankAccount: $('vendorBankAccount').value.trim(),
+          ifsc: $('vendorBankIFSC').value.trim(),
+          upi: $('vendorUPI').value.trim(),
+          // Date handled by database, but we keep this for PDF display
+          createdAt: new Date().toISOString()
+        };
+
+        // Read files for PDF generation purposes (Base64)
+        const p = [];
+        if (aadhaarFile) {
+          p.push(new Promise(res => {
+            const r = new FileReader();
+            r.onload = e => { vendor.aadhaarDataUrl = e.target.result; res(); };
+            r.readAsDataURL(aadhaarFile);
+          }));
+        }
+
+        return Promise.all(p).then(() => vendor);
+      }
+
+      // -- Event bindings --
+      function bindEvents() {
+        $('vendorAadhaar').addEventListener('change', function (e) { previewImage(this, 'aadhaarPreview'); });
+        $('vendorPhoto').addEventListener('change', function (e) { previewImage(this, 'photoPreview'); });
+        $('vendorUPI').addEventListener('input', function (e) { updateUpiQRCode(this.value.trim()); });
+
+        $('resetBtn').addEventListener('click', function () {
+          if (confirm('Clear form?')) {
+            $('vendorForm').reset();
+            $('aadhaarPreview').innerHTML = '';
+            $('photoPreview').innerHTML = '';
+            $('upiQRContainer').style.display = 'none';
+            $('summaryContainer').innerHTML = '';
+            $('message').innerHTML = '';
+            clearAllFieldErrors();
+          }
+        });
+
+        $('vendorForm').addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          if (!validateForm()) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+          // Build vendor object then show summary and enable payment
+          buildVendorObject().then(vendor => {
+            window._pendingVendor = vendor;
+            showSummary(vendor);
+            showMessage('Form validated. Please complete the payment.', 'success');
+            document.querySelector('#merchantQR').scrollIntoView({ behavior: 'smooth' });
+          });
+        });
+
+        $('paymentCompleteBtn').addEventListener('click', function () {
+          if (!window._pendingVendor) {
+            showMessage('Please fill and submit the registration form first.', 'error');
+            return;
+          }
+          simulatePaymentAndGenerateReceipt(window._pendingVendor);
+        });
+      }
+
+      function showMessage(text, type) {
+        const m = $('message');
+        m.textContent = text;
+        m.className = type === 'success' ? 'success' : (type === 'error' ? 'error' : '');
+        // Keep message visible if it's an error so user can read it
+        if (type === 'success') {
+          setTimeout(() => { if (m) { m.textContent = ''; m.className = ''; } }, 6000);
+        }
+      }
+
+      function init() {
+        bindEvents();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+
+</html>
