@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jharkhand Gramstay</title>
+    <!-- Website Icon (Favicon) -->
+  <link rel="icon" type="image/png" href="https://i.ibb.co/KjDDhDSb/Photo-Fixer-Bot-Chat-GPT-Image-Nov-20-2025-07-00-39-PM-removebg-preview.png">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }
+        header {
+            background: white;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        header img {
+            height: 60px;
+        }
+        nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+        }
+        .hero {
+            width: 100%;
+            height: 320px;
+            background: url('https://dynamic-media-cdn.tripadvisor.com/media/photo-o/11/e2/a5/9a/jubilee-park.jpg?w=700&h=400&s=1') center/cover;
+            position: relative;
+        }
+        .hero h1 {
+            position: absolute;
+            bottom: 20px;
+            left: 40px;
+            background: rgba(128, 0, 64, 0.85);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 22px;
+        }
+        .filter-box {
+            background: white;
+            margin: 20px auto;
+            width: 85%;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .filter-box select, .filter-box button {
+            padding: 10px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+        }
+        .filter-box button {
+            background: #4a0e28;
+            color: white;
+            cursor: pointer;
+        }
+        .homestay-grid {
+            width: 85%;
+            margin: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .info {
+            padding: 15px;
+        }
+        .info h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .info p {
+            margin: 6px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .btn {
+            margin-top: 10px;
+            display: inline-block;
+            padding: 8px 15px;
+            background: #4a0e28;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+    .btn-row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background: #555;
+}
+
+.btn-secondary:hover {
+    background: #333;
+}
+</style>
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="https://i.ibb.co/KjDDhDSb/Photo-Fixer-Bot-Chat-GPT-Image-Nov-20-2025-07-00-39-PM-removebg-preview.png" alt="Jharkhand Logo" />
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="map2.html">Destinations</a>
+        <a href="team.html">About Us</a>
+        <a href="po.html">Register Your Gramstay</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <h1>120 Accommodations in Jharkhand Gramstays</h1>
+</section>
+
+<section class="filter-box">
+    <select id="district">
+        <option>All Jharkhand Districts</option>
+        <option>Ranchi</option>
+        <option>Gumla</option>
+        <option>Palamu</option>
+        <option>Latehar</option>
+        <option>Hazaribagh</option>
+        <option>Dumka</option>
+    </select>
+
+    <select id="price">
+        <option>Price Range</option>
+        <option>₹500 - ₹1500</option>
+        <option>₹1500 - ₹2500</option>
+        <option>₹2500 - ₹3500</option>
+    </select>
+
+    <button onclick="searchHomestays()">Search</button>
+</section>
+
+<section class="homestay-grid" id="homestayGrid"></section>
+
+<section class="homestay-grid" id="homestayGrid"></section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+// ==========================================
+// 1. CONNECT TO SUPABASE - REPLACE KEYS
+// ==========================================
+const SUPABASE_URL = "https://twyklobclarqdpkmumkm.supabase.co";
+// !!! PASTE YOUR SUPABASE ANON KEY HERE !!!
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eWtsb2JjbGFycWRwa211bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNTcxMTYsImV4cCI6MjA4MDgzMzExNn0.edD7uIYk0DE00KAFFMpTVApg3__ilwvLMVfmvv-oRh0"; 
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Global variable to hold data for filtering
+let allGramstays = [];
+
+// ==========================================
+// 2. FETCH DATA FROM DB
+// ==========================================
+async function fetchGramstays() {
+    const container = document.getElementById("homestayGrid");
+    container.innerHTML = "<p style='text-align:center;width:100%;padding:20px;'>Loading Gramstays...</p>";
+
+    try {
+        // Fetch from the correct table: homestay_listings
+        const { data, error } = await supabaseClient
+            .from('homestay_listings') 
+            .select('*');
+
+        if (error) throw error;
+
+        allGramstays = data;
+        loadHomestays(allGramstays);
+        
+        // Update the count on the hero section
+        const countElement = document.querySelector('.hero h1');
+        if (countElement) {
+            countElement.textContent = `${data.length} Accommodations in Jharkhand Gramstays`;
+        }
+
+    } catch (err) {
+        console.error("Error fetching data:", err);
+        container.innerHTML = "<p style='color:red;text-align:center;width:100%;'>Failed to load data. Please check your Supabase keys and RLS policy for the 'homestay_listings' table.</p>";
+    }
+}
+
+// ==========================================
+// 3. RENDER CARDS
+// ==========================================
+function loadHomestays(list) {
+    const container = document.getElementById("homestayGrid");
+    container.innerHTML = "";
+
+    if (!list || list.length === 0) {
+        container.innerHTML = "<p style='text-align:center;width:100%'>No homestays found.</p>";
+        return;
+    }
+
+    list.forEach(item => {
+        // Using the column names from your database: img, link, info
+        container.innerHTML += `
+            <div class="card">
+                <img src="${item.img || 'https://via.placeholder.com/300'}" alt="${item.name}">
+                <div class="info">
+                    <h3>${item.name}</h3>
+                    <p>District: ${item.district}</p>
+                    <p>Price: ₹${item.price} / night</p>
+                    <a class="btn" href="${item.link || '#'}" target="_blank">Book Now</a>
+                    <a class="btn btn-secondary" href="${item.info || '#'}" target="_blank">More Info</a>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// ==========================================
+// 4. SEARCH FUNCTION
+// ==========================================
+function searchHomestays() {
+    const dist = document.getElementById("district").value;
+    const price = document.getElementById("price").value;
+    
+    let filtered = allGramstays;
+
+    if (dist !== "All Jharkhand Districts") {
+        filtered = filtered.filter(h => h.district.toLowerCase() === dist.toLowerCase());
+    }
+
+    if (price !== "Price Range") {
+        const [min, max] = price.replace(/₹/g, "").split(" - ").map(Number);
+        filtered = filtered.filter(h => h.price >= min && h.price <= max);
+    }
+
+    loadHomestays(filtered);
+}
+
+// Start the process when the page loads
+fetchGramstays();
+</script>
+<style>
+	 /* Footer */
+.jh-footer {
+  position: relative;
+  background-image: url("https://i.ibb.co/ynTVjpQP/IMG-20251117-200029-099.jpg"); /* your temple image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 80px 0;
+  color: #fff;
+  margin-top: 50px;
+}
+
+.footer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  
+}
+
+.footer-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1300px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 0 40px;
+}
+
+.footer-col {
+  width: 33%;
+}
+
+.footer-col h3 {
+  font-size: 22px;
+  margin-bottom: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.footer-col h4 {
+  font-size: 18px;
+  margin: 16px 0 6px;
+  font-weight: 700;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.footer-col ul li {
+  margin: 8px 0;
+}
+
+.footer-col ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  opacity: 0.9;
+  transition: 0.2s ease-in-out;
+}
+
+.footer-col ul li a:hover {
+  opacity: 1;
+  color: #d44a4a;
+}
+
+.footer-col p {
+  font-size: 16px;
+  line-height: 1.5;
+  opacity: 0.95;
+}
+
+.footer-col .small {
+  font-size: 13px;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.footer-lang {
+  margin-top: 20px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 15px;
+}
+/* Responsive */
+@media (max-width: 991px) {
+  .footer-container {
+    flex-direction: column;
+    text-align: left;
+  }
+  .footer-col {
+    width: 100%;
+  }
+}
+
+/* Floating Translate Button */
+#translate-btn {
+    position: fixed;
+    bottom: 25px;
+    left: 25px; /* change to right if you want */
+    background: #ff004c;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 5px 20px rgba(255,0,100,0.5);
+    transition: 0.3s;
+}
+
+#translate-btn:hover {
+    transform: scale(1.08);
+}
+
+/* Hidden Translate Box */
+#translate-box {
+    position: fixed;
+    bottom: 80px;
+    left: 25px; /* match button side */
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    z-index: 9999;
+    display: none;
+}
+
+</style>
+<footer class="jh-footer">
+  <div class="footer-overlay"></div>
+
+  <div class="footer-container">
+
+    <!-- Column 1 -->
+    <div class="footer-col">
+      <h3>QUICK LINKS</h3>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="#">Contact Us</a></li>
+        <li><a href="#">Policy and Rules</a></li>
+        <li><a href="#">Complain</a></li>
+        <li><a href="#">RTI</a></li>
+        <li><a href="#">TIC</a></li>
+        <li><a href="#">Tender</a></li>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">Download</a></li>
+      </ul>
+
+    </div>
+
+    <!-- Column 2 -->
+    <div class="footer-col">
+      <h3>GET IN TOUCH</h3>
+      <p class="small">(MONDAY TO SATURDAY 10:00 HRS TO 18:00 HRS)</p>
+
+      <h4>Directorate of Tourism</h4>
+      <p>MDI Building, 3rd Floor, Dhurwa, Ranchi-834004</p>
+      <p>✉ dirjharkhandtourism[at]gmail[dot]com</p>
+
+      <h4>Department of Tourism</h4>
+      <p>FFP Building, 2nd Floor, Dhurwa, Ranchi-834004</p>
+      <p>✉ govjharkhandtourism[at]gmail[dot]com</p>
+    </div>
+
+    <!-- Column 3 -->
+    <div class="footer-col">
+      <h3>ONLINE BOOKING, FEEDBACK & SUPPORT</h3>
+
+      <p>✉ jtdcltd[at]gmail[dot]com</p>
+      <p>☎  0651-2331828, 2331643</p>
+
+      <h4>Jharkhand Tourism Development Corporation Ltd</h4>
+      <p>6th Floor, Premium Suit Building JUPMI Campus,<br>
+      Plant Plaza Road, Dhurwa, Ranchi-834004</p>
+
+      <p>✉ jtdcltd[at]gmail[dot]com<br>
+      ☎  +91 651 2331828</p>
+    </div>
+
+  </div>
+  <div class="container">
+      <strong>©2025 Jharkhand Tourism — Built for SIH 2025</strong>
+    </div>
+</footer>
+
+<!-- Floating Translate Button -->
+<div id="translate-btn" onclick="toggleTranslateBox()">
+    Translate
+</div>
+
+<!-- Hidden Translate Box -->
+<div id="translate-box">
+    <div id="google_translate_element"></div>
+</div>
+<script>
+function toggleTranslateBox() {
+    var box = document.getElementById("translate-box");
+    box.style.display = box.style.display === "block" ? "none" : "block";
+}
+</script>
+
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: 'hi,bn,ta,te,kn,ml,mr,pa,gu,or,as,ur',
+      layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+    }, 'google_translate_element');
+  }
+</script>
+
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script src="chatbot.js"></script>
+<style>
+/* Floating TTS Widget */
+#tts-widget {
+    position: fixed;
+    bottom: 15px;
+    right: 80px;
+    z-index: 999999;
+}
+
+#tts-toggle {
+    background: #ff004c;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
+    cursor: pointer;
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+#tts-panel {
+    display: none;
+    width: 260px;
+    background: #ffffff;
+    color: #000;
+    padding: 16px;
+    border-radius: 14px;
+    margin-top: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    font-family: Arial;
+}
+
+#tts-panel h3 {
+    margin-top: 0;
+    font-size: 20px;
+}
+
+#tts-panel select,
+#tts-panel input {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.tts-buttons button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+    border: none;
+    background: #ff5722;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.tts-buttons button:hover {
+    background: #e64a19;
+}
+</style>
+
+<!-- Floating Read-Aloud Panel -->
+<div id="tts-widget">
+    <button id="tts-toggle">🔊</button>
+
+    <div id="tts-panel">
+        <h3>Read Aloud</h3>
+
+        <!-- Voice Selector -->
+        <label>Voice:</label>
+        <select id="voiceSelect"></select>
+
+        <!-- Speed -->
+        <label style="margin-top:10px;">Speed: <span id="rateValue">1.0</span></label>
+        <input type="range" id="rate" min="0.5" max="1.5" value="1" step="0.1">
+
+        <!-- Buttons -->
+        <div class="tts-buttons">
+            <button onclick="readFull()">Read Full Page</button>
+            <button onclick="readSelection()">Read Selection</button>
+            <button onclick="pauseRead()">Pause</button>
+            <button onclick="resumeRead()">Resume</button>
+            <button onclick="stopRead()">Stop</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let voices = [];
+let utterance = new SpeechSynthesisUtterance();
+
+// Load voices
+function loadVoices() {
+    voices = speechSynthesis.getVoices();
+
+    const voiceSelect = document.getElementById("voiceSelect");
+    voiceSelect.innerHTML = "";
+
+    voices.forEach((v, i) => {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = `${v.name} (${v.lang})`;
+        voiceSelect.appendChild(option);
+    });
+}
+
+// Load voices when browser is ready
+speechSynthesis.onvoiceschanged = loadVoices;
+
+// Toggle widget panel
+document.getElementById("tts-toggle").onclick = () => {
+    const panel = document.getElementById("tts-panel");
+    panel.style.display = panel.style.display === "block" ? "none" : "block";
+};
+
+// Adjust speed
+document.getElementById("rate").oninput = function() {
+    document.getElementById("rateValue").innerText = this.value;
+};
+
+// Read full page
+function readFull() {
+    stopRead();
+
+    utterance = new SpeechSynthesisUtterance(document.body.innerText);
+    applySettings();
+    speechSynthesis.speak(utterance);
+}
+
+// Read only highlighted text
+function readSelection() {
+    const text = window.getSelection().toString();
+
+    if (!text) {
+        alert("Please select some text first!");
+        return;
+    }
+
+    stopRead();
+
+    utterance = new SpeechSynthesisUtterance(text);
+    applySettings();
+    speechSynthesis.speak(utterance);
+}
+
+// Apply voice + speed settings
+function applySettings() {
+    const selectedVoice = document.getElementById("voiceSelect").value;
+    utterance.voice = voices[selectedVoice];
+    utterance.rate = document.getElementById("rate").value;
+}
+
+// Controls
+function pauseRead() {
+    speechSynthesis.pause();
+}
+
+function resumeRead() {
+    speechSynthesis.resume();
+}
+
+function stopRead() {
+    speechSynthesis.cancel();
+}
+</script>
+
+</body>
+</html>
