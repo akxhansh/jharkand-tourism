@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Travel Guide Registration</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --accent:#b34a2e;
+      --muted:#f3f0ed;
+      --radius:14px;
+      --text:#222;
+      font-family: Inter, system-ui, Arial;
+    }
+    body {
+      margin:0;
+      background:#faf9f7;
+      padding:24px;
+      color:var(--text);
+    }
+    .container {
+      max-width:900px;
+      margin:auto;
+      background:#fff;
+      padding:24px;
+      border-radius:var(--radius);
+      box-shadow:0 10px 36px rgba(0,0,0,0.08);
+    }
+    h1 {
+      font-size:26px;
+      margin-bottom:6px;
+      color:var(--accent);
+    }
+    .subtitle {
+      color:#666;
+      font-size:14px;
+      margin-bottom:20px;
+    }
+    form { display:flex; flex-direction:column; gap:16px; }
+    .row { display:flex; gap:14px; flex-wrap:wrap; }
+    .col { flex:1; min-width:260px; }
+
+    label {
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+      color:#333;
+    }
+    input, select, textarea {
+      width:100%;
+      padding:10px;
+      border:1px solid #ddd;
+      border-radius:10px;
+      font-size:14px;
+      background:white;
+      box-sizing:border-box;
+    }
+    textarea { resize:vertical; min-height:110px; }
+
+    .small { font-size:12px; color:#777; margin-top:3px; }
+
+    .chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip {
+      padding:8px 12px;
+      border-radius:20px;
+      border:1px solid #e4dfdb;
+      background:#f7f5f3;
+      font-size:13px;
+      cursor:pointer;
+      color:var(--accent);
+      user-select: none; /* Prevent text selection */
+    }
+    .chip.selected {
+      background:var(--accent);
+      color:#fff;
+      border-color:var(--accent);
+    }
+
+    .btn {
+      padding:12px 18px;
+      border-radius:10px;
+      font-size:15px;
+      cursor:pointer;
+      font-weight:600;
+      border:none;
+      transition: opacity 0.2s;
+    }
+    .btn.primary { background:var(--accent); color:white; width:100%; }
+    .btn.primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn.ghost { background:#fff; border:1px solid #ddd; color:var(--accent); }
+
+    .actions { display:flex; gap:12px; margin-top:8px; justify-content:flex-end; }
+    .errors { color:#b00020; font-size:13px; }
+    .success-msg { color:#2e7d32; font-size:14px; margin-top:10px; font-weight:600; text-align:center; }
+
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Travel Guide Registration</h1>
+    <div class="subtitle">Fill out the form to apply as a certified travel guide.</div>
+
+    <form id="guideForm" novalidate>
+
+      <div class="row">
+        <div class="col">
+          <label>Full Name *</label>
+          <input id="fullName" type="text" required>
+        </div>
+        <div class="col">
+          <label>Display Name</label>
+          <input id="displayName" type="text" placeholder="Public name (optional)">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Email *</label>
+          <input id="email" type="email" required>
+        </div>
+        <div class="col">
+          <label>Phone (India) *</label>
+          <input id="phone" type="tel" placeholder="+91xxxxxxxxxx" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Date of Birth</label>
+          <input id="dob" type="date">
+          <div class="small">Guides must be 18+.</div>
+        </div>
+        <div class="col">
+          <label>Experience (years)</label>
+          <input id="experience" type="number" min="0">
+        </div>
+      </div>
+
+      <div>
+        <label>Languages Spoken *</label>
+        <div id="langChips" class="chips"></div>
+      </div>
+
+      <div>
+        <label>Specialties / Expertise</label>
+        <div id="specChips" class="chips"></div>
+      </div>
+
+      <div>
+        <label>Preferred Destinations</label>
+        <input id="destinations" type="text" placeholder="Netarhat, Betla, Ranchi...">
+      </div>
+
+
+      <div>
+        <label>Short Bio</label>
+        <textarea id="bio" placeholder="Write a short introduction (max 500 chars)"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Available From</label>
+          <input id="availableFrom" type="date">
+        </div>
+        <div class="col">
+          <label>Daily Guide Rate (₹/hrs)</label>
+          <input id="rate" type="number" min="0">
+        </div>
+      </div>
+
+      <label>
+        <input id="terms" type="checkbox"> I accept the terms & conditions *
+      </label>
+
+      <div class="errors" id="formErrors"></div>
+      <div id="successMessage" class="success-msg"></div>
+
+      <div class="actions">
+        <button type="button" class="btn ghost" id="saveDraft">Save Draft</button>
+        <button type="submit" class="btn primary" id="submitBtn">Submit Application</button>
+      </div>
+
+    </form>
+
+  </div>
+
+
+<script>
+// ==========================================
+// 1. SUPABASE CONFIGURATION
+// ==========================================
+const SUPABASE_URL = "https://twyklobclarqdpkmumkm.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE"; // <--- PASTE YOUR KEY HERE
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+/* ---------- LANGUAGE & SPECIALTY CHIPS ---------- */
+const languages = ['Hindi','English','Santali','Ho','Nagpuri','Bhojpuri','Bangla','Odia'];
+const specialties = ['Wildlife','Trekking','Cultural Tours','Heritage','Photography','Food Tours','Temple Tours'];
+
+function makeChips(list, containerId) {
+  const box = document.getElementById(containerId);
+  list.forEach(item => {
+    const c = document.createElement("div");
+    c.className = "chip";
+    c.textContent = item;
+    c.dataset.value = item; // Store value in data attribute
+    c.onclick = () => c.classList.toggle("selected");
+    box.appendChild(c);
+  });
+}
+makeChips(languages, "langChips");
+makeChips(specialties, "specChips");
+
+/* ---------- HELPER: GET SELECTED CHIPS ---------- */
+function getSelectedChips(containerId) {
+  const selected = document.querySelectorAll(`#${containerId} .chip.selected`);
+  return Array.from(selected).map(chip => chip.dataset.value);
+}
+
+/* ---------- VALIDATION ---------- */
+function validateForm() {
+  const errs = [];
+  if (!document.getElementById("fullName").value.trim()) errs.push("Full name required.");
+  if (!document.getElementById("email").value.trim()) errs.push("Email required.");
+
+  const phone = document.getElementById("phone").value.trim();
+  if (!/^(\+91)?[6-9]\d{9}$/.test(phone)) errs.push("Valid Indian phone number required.");
+
+  const langCount = document.querySelectorAll("#langChips .chip.selected").length;
+  if (langCount === 0) errs.push("Select at least one language.");
+
+  if (!document.getElementById("terms").checked) errs.push("Accept the terms & conditions.");
+
+  return errs;
+}
+
+/* ---------- SUBMISSION ---------- */
+document.getElementById("guideForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  
+  const errorBox = document.getElementById("formErrors");
+  const successBox = document.getElementById("successMessage");
+  const btn = document.getElementById("submitBtn");
+  
+  errorBox.innerHTML = "";
+  successBox.innerHTML = "";
+
+  // 1. Validate
+  const errors = validateForm();
+  if (errors.length) {
+    errorBox.innerHTML = errors.map(x => "• " + x).join("<br>");
+    return;
+  }
+
+  // 2. Prepare Data
+  const formData = {
+    fullName: document.getElementById("fullName").value,
+    displayName: document.getElementById("displayName").value,
+    email: document.getElementById("email").value,
+    phone: document.getElementById("phone").value,
+    dob: document.getElementById("dob").value || null,
+    experience: document.getElementById("experience").value ? Number(document.getElementById("experience").value) : null,
+    destinations: document.getElementById("destinations").value,
+    bio: document.getElementById("bio").value,
+    availableFrom: document.getElementById("availableFrom").value || null,
+    rate: document.getElementById("rate").value ? Number(document.getElementById("rate").value) : null,
+    languages: getSelectedChips("langChips"),     // Array of strings
+    specialties: getSelectedChips("specChips"),   // Array of strings
+    status: 'Pending'
+  };
+
+  // 3. Send to Supabase
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+
+  try {
+    const { error } = await supabaseClient
+      .from('guides')
+      .insert([formData]);
+
+    if (error) throw error;
+
+    // Success
+    successBox.textContent = "Application Submitted Successfully! We will contact you soon.";
+    document.getElementById("guideForm").reset();
+    
+    // Clear chips visual selection
+    document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
+    // Clear draft
+    localStorage.removeItem("guideDraft");
+
+  } catch (err) {
+    console.error(err);
+    errorBox.textContent = "Error submitting form: " + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Submit Application";
+  }
+});
+
+/* ---------- SAVE DRAFT (Local Storage) ---------- */
+document.getElementById("saveDraft").onclick = () => {
+  const data = {
+    fullName: document.getElementById("fullName").value,
+    displayName: document.getElementById("displayName").value,
+    email: document.getElementById("email").value,
+    // ... simplistic save (for demo purposes)
+  };
+  localStorage.setItem("guideDraft", JSON.stringify(data));
+  alert("Draft saved locally!");
+};
+</script>
+
+</body>
+</html>
